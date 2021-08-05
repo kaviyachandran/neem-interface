@@ -43,7 +43,7 @@ mem_event_add_diagnosis(Situation, Diagnosis) :- kb_project(satisfies(Situation,
 add_subaction_with_task(ParentAction,SubActionType,TaskType,SubAction) :-
     execution_agent(Agent),
     kb_project([
-        new_iri(SubAction, SubActionType), is_action(SubAction), has_type(SubAction,SubActionType),
+        new_iri(SubAction, SubActionType), has_type(SubAction,SubActionType),
         new_iri(Task, TaskType), has_type(Task,TaskType), executes_task(SubAction,Task),
         % % has_subevent(ParentAction,SubAction), <-- has_subevent is currently broken in KnowRob (https://github.com/knowrob/knowrob/issues/300)
         holds(ParentAction,dul:hasConstituent,SubAction), % replacement for has_subevent
