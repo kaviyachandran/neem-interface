@@ -1,5 +1,5 @@
 import os
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 from neem_interface_python.rosprolog_client import Prolog, atom
 
@@ -44,6 +44,29 @@ class NEEMInterface:
             return solution["SubAction"]
         else:
             raise NEEMError("Failed to create action")
+
+    ### NEEM Parsing ###############################################################
+
+    def load_neem(self, neem_path: str):
+        self.prolog.once(f"remember({atom(neem_path)})")
+
+    def get_all_actions(self) -> List[str]:
+        res = self.prolog.all_solutions("is_action(Action)")
+        if len(res) > 0:
+            return list(set([dic["Action"] for dic in
+                             res]))  # Deduplicate: is_action(A) may yield the same action more than once
+        else:
+            raise NEEMError("Failed to find any actions")
+
+    def get_interval_for_action(self, action: str) -> Optional[Tuple[float, float]]:
+        res = self.prolog.once(f"event_interval({atom(action)}, Begin, End)")
+        if res is None:
+            return res
+        return res["Begin"], res["End"]
+
+    def get_trajectory(self, obj: str, start_timestamp: float, end_timestamp: float) -> List:
+        res = self.prolog.once(f"tf_mng_trajectory({obj}, {start_timestamp}, {end_timestamp}, Trajectory)")
+        return res["Trajectory"]
 
 
 class Episode:
