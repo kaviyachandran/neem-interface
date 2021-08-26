@@ -64,8 +64,12 @@ class NEEMInterface:
             return res
         return res["Begin"], res["End"]
 
-    def get_trajectory(self, obj: str, start_timestamp: float, end_timestamp: float) -> List:
+    def get_tf_trajectory(self, obj: str, start_timestamp: float, end_timestamp: float) -> List:
         res = self.prolog.once(f"tf_mng_trajectory({obj}, {start_timestamp}, {end_timestamp}, Trajectory)")
+        return res["Trajectory"]
+
+    def get_wrench_trajectory(self, obj: str, start_timestamp: float, end_timestamp: float) -> List:
+        res = self.prolog.once(f"wrench_mng_trajectory({obj}, {start_timestamp}, {end_timestamp}, Trajectory)")
         return res["Trajectory"]
 
 

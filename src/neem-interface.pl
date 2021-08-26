@@ -4,14 +4,14 @@
 
 mem_clear_memory() :-
     drop_graph(user),
-    tf_mem_clear,
-    mng_drop(roslog, tf).
+    tf_mem_clear, mng_drop(roslog, tf),
+    wrench_mem_clear, wrench_mng_drop.
 
 mem_episode_start(Action, TaskType, EnvOwl, EnvOwlIndiName, EnvUrdf, EnvUrdfPrefix, AgentOwl, AgentOwlIndiName, AgentUrdf) :-
     retractall(execution_agent(_)),
-    tf_logger_disable,
+    tf_logger_disable, wrench_logger_disable,
     mem_clear_memory,
-    tf_logger_enable,
+    tf_logger_enable, wrench_logger_enable,
     % load_owl('package://knowrob/owl/knowrob.owl',[namespace(knowrob)]),   % Is always loaded when knowrob starts
     load_owl(EnvOwl),
     load_owl(AgentOwl),
@@ -63,6 +63,14 @@ belief_perceived_at(ObjectType, Object) :- kb_project([has_type(Object,ObjectTyp
 mem_tf_is_at(Object, ReferenceFrame, Position, Rotation, Timestamp) :-
     time_scope(=(Timestamp), =<('Infinity'), FScope),
     tf_set_pose(Object, [ReferenceFrame, Position, Rotation], FScope).
+
+mem_wrench_set(Object, Force, Torque, Timestamp) :-
+    write('mem_wrench_set, object: '),
+    write(Object),
+    write('\n'),
+    time_scope(=(Timestamp), =<('Infinity'), FScope),
+    wrench_set(Object, [Force, Torque], FScope),
+    write('wrench_set succeeded\n').
 
 add_participant_with_role(Action, ObjectId, RoleType) :-
 kb_call([executes_task(Action, Task),triple(Event,dul:'hasTimeInterval',TimeInterval),triple(TimeInterval,soma:'hasIntervalBegin',Start),triple(TimeInterval,soma:'hasIntervalEnd',End)]),
