@@ -1,5 +1,6 @@
 import os
 from typing import List, Tuple, Optional
+import time
 
 from neem_interface_python.rosprolog_client import Prolog, atom
 
@@ -23,21 +24,23 @@ class NEEMInterface:
     ### NEEM Creation ###############################################################
 
     def start_episode(self, task_type: str, env_owl: str, env_owl_ind_name: str, env_urdf: str, env_urdf_prefix: str,
-                      agent_owl: str, agent_owl_ind_name: str, agent_urdf: str):
+                      agent_owl: str, agent_owl_ind_name: str, agent_urdf: str, start_time: float = None):
         """
         Start an episode and return the prolog atom for the corresponding action.
         """
         q = f"mem_episode_start(Action, {atom(task_type)}, {atom(env_owl)}, {atom(env_owl_ind_name)}, {atom(env_urdf)}," \
-            f"{atom(env_urdf_prefix)}, {atom(agent_owl)}, {atom(agent_owl_ind_name)}, {atom(agent_urdf)})"
+            f"{atom(env_urdf_prefix)}, {atom(agent_owl)}, {atom(agent_owl_ind_name)}, {atom(agent_urdf)}," \
+            f"{start_time if start_time is not None else time.time()})"
         res = self.prolog.once(q)
         return res["Action"]
 
-    def stop_episode(self, neem_path: str):
-        return self.prolog.once(f"mem_episode_stop('{neem_path}')")
+    def stop_episode(self, neem_path: str, end_time: float = None):
+        """
+        End the current episode and save the NEEM to the given path
+        """
+        return self.prolog.once(f"mem_episode_stop({atom(neem_path)}, {end_time if end_time is not None else time.time()})")
 
     def add_subaction_with_task(self, parent_action, sub_action_type, task_type) -> str:
-        """
-        """
         q = f"add_subaction_with_task({atom(parent_action)},{atom(sub_action_type)},{atom(task_type)},SubAction)"
         solution = self.prolog.once(q)
         if solution is not None:
@@ -76,7 +79,8 @@ class NEEMInterface:
 class Episode:
     def __init__(self, neem_interface: NEEMInterface, task_type: str, env_owl: str, env_owl_ind_name: str,
                  env_urdf: str,
-                 env_urdf_prefix: str, agent_owl: str, agent_owl_ind_name: str, agent_urdf: str, neem_output_path: str):
+                 env_urdf_prefix: str, agent_owl: str, agent_owl_ind_name: str, agent_urdf: str, neem_output_path: str,
+                 start_time=None):
         self.neem_interface = neem_interface
         self.task_type = task_type
         self.env_owl = env_owl
@@ -90,12 +94,14 @@ class Episode:
 
         self.top_level_action_iri = None
         self.episode_iri = None
+        self.start_time = start_time if start_time is not None else time.time()
 
     def __enter__(self):
         self.top_level_action_iri = self.neem_interface.start_episode(self.task_type, self.env_owl,
                                                                       self.env_owl_ind_name, self.env_urdf,
                                                                       self.env_urdf_prefix, self.agent_owl,
-                                                                      self.agent_owl_ind_name, self.agent_urdf)
+                                                                      self.agent_owl_ind_name, self.agent_urdf,
+                                                                      self.start_time)
         self.episode_iri = \
             self.neem_interface.prolog.once(f"kb_call(is_setting_for(Episode, {atom(self.top_level_action_iri)}))")[
                 "Episode"]
