@@ -105,7 +105,27 @@ kb_project([has_participant(Action,ObjectId), has_type(Role, RoleType), has_role
 
 %add_participant_with_role(Action, ObjectId, RoleType) :- kb_call(executes_task(Action, Task)), kb_project([has_participant(Action,ObjectId), has_type(Role, RoleType), has_role(ObjectId,Role) during [0.0,0.0]]).
 
-add_parameter(Task,ParameterType,RegionType) :- kb_project([has_type(Parameter, ParameterType), has_type(Region,RegionType),has_assignment(Parameter,Region) during [0.0,0.1], has_parameter(Task, Parameter)]).
+add_parameter(Task, ParameterType, RegionType, Parameter) :-
+    kb_project([
+        new_iri(Parameter, dul:Parameter),
+        has_type(Parameter, ParameterType),
+        has_parameter(Task, Parameter),
+        new_iri(Region, dul:Region),
+        has_type(Region, RegionType),
+        has_assignment(Parameter, Region)
+    ]).
+
+add_named_parameter(Task, ParameterType, ParameterName, RegionType, Parameter) :-
+    add_parameter(Task, ParameterType, RegionType, Parameter),
+    kb_project(holds(Parameter, soma:hasNameString, ParameterName)).
+
+set_parameter_value_during_interval(Parameter, ParameterValue, Begin, End) :-
+    has_assignment(Parameter, Region),
+    kb_project(holds(Region, dul:hasRegionDataValue, ParameterValue) during [Begin, End]).
+
+set_parameter_value(Parameter, ParameterValue) :-
+    has_assignment(Parameter, Region),
+    kb_project(holds(Region, dul:hasRegionDataValue, ParameterValue)).
 
 add_grasping_parameter(Action,GraspingOrientationType) :- kb_call(executes_task(Action, Task)), kb_project([has_type(GraspingOrientation,GraspingOrientationType), has_type(GraspingOrientationConcept,'http://www.ease-crc.org/ont/SOMA.owl#GraspingOrientation'), has_parameter(Task,GraspingOrientationConcept),holds(GraspingOrientationConcept, dul:classifies, GraspingOrientation),has_region(Action,GraspingOrientation)]),!.
 
