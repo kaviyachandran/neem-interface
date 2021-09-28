@@ -114,10 +114,6 @@ class Prolog(object):
         self._next_solution_srv = roslibpy.Service(self.ros_client, f'{name_space}/next_solution', "json_prolog_msgs/srv/PrologNextSolution")
         self._finish_query_srv = roslibpy.Service(self.ros_client, f'{name_space}/finish', "json_prolog_msgs/srv/PrologFinish")
 
-    def __del__(self):
-        if self.ros_client.is_connected:
-            self.ros_client.terminate()
-
     def query(self, query_str):
         """
         Returns an Object which asks rosprolog for one solution at a time.
