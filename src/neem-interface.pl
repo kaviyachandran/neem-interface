@@ -7,11 +7,11 @@ mem_clear_memory() :-
     tf_mem_clear, mng_drop(roslog, tf),
     wrench_mem_clear, wrench_mng_drop.
 
-mem_episode_start(Action, TaskType, EnvOwl, EnvOwlIndiName, EnvUrdf, EnvUrdfPrefix, AgentOwl, AgentOwlIndiName, AgentUrdf) :-
+mem_episode_start(Action, TaskType, EnvOwl, EnvOwlIndiName, EnvUrdf, AgentOwl, AgentOwlIndiName, AgentUrdf) :-
     get_time(StartTime),
-    mem_episode_start(Action, TaskType, EnvOwl, EnvOwlIndiName, EnvUrdf, EnvUrdfPrefix, AgentOwl, AgentOwlIndiName, AgentUrdf, StartTime).
+    mem_episode_start(Action, TaskType, EnvOwl, EnvOwlIndiName, EnvUrdf, AgentOwl, AgentOwlIndiName, AgentUrdf, StartTime).
 
-mem_episode_start(Action, TaskType, EnvOwl, EnvOwlIndiName, EnvUrdf, EnvUrdfPrefix, AgentOwl, AgentOwlIndiName, AgentUrdf,
+mem_episode_start(Action, TaskType, EnvOwl, EnvOwlIndiName, EnvUrdf, AgentOwl, AgentOwlIndiName, AgentUrdf,
                   StartTime) :-
     retractall(execution_agent(_)),
     tf_logger_disable, wrench_logger_disable,
@@ -21,7 +21,7 @@ mem_episode_start(Action, TaskType, EnvOwl, EnvOwlIndiName, EnvUrdf, EnvUrdfPref
     load_owl(EnvOwl),
     load_owl(AgentOwl),
     urdf_load(AgentOwlIndiName, AgentUrdf, [load_rdf]),
-    urdf_load(EnvOwlIndiName, EnvUrdf, [load_rdf,prefix(EnvUrdfPrefix)]),
+    urdf_load(EnvOwlIndiName, EnvUrdf, [load_rdf]),
     assertz(execution_agent(AgentOwlIndiName)),
     execution_agent(Agent),
     kb_project([

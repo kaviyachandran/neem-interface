@@ -12,6 +12,10 @@ class NEEMError(Exception):
 
 
 class NEEMInterface:
+    """
+    Low-level interface to KnowRob, which enables the easy creation of NEEMs in Python.
+    For more ease of use, consider using the Episode object in a 'with' statement instead (see below).
+    """
     def __init__(self):
         self.prolog = Prolog()
 
@@ -23,13 +27,13 @@ class NEEMInterface:
 
     ### NEEM Creation ###############################################################
 
-    def start_episode(self, task_type: str, env_owl: str, env_owl_ind_name: str, env_urdf: str, env_urdf_prefix: str,
+    def start_episode(self, task_type: str, env_owl: str, env_owl_ind_name: str, env_urdf: str,
                       agent_owl: str, agent_owl_ind_name: str, agent_urdf: str, start_time: float = None):
         """
         Start an episode and return the prolog atom for the corresponding action.
         """
         q = f"mem_episode_start(Action, {atom(task_type)}, {atom(env_owl)}, {atom(env_owl_ind_name)}, {atom(env_urdf)}," \
-            f"{atom(env_urdf_prefix)}, {atom(agent_owl)}, {atom(agent_owl_ind_name)}, {atom(agent_urdf)}," \
+            f"{atom(agent_owl)}, {atom(agent_owl_ind_name)}, {atom(agent_urdf)}," \
             f"{start_time if start_time is not None else time.time()})"
         res = self.prolog.once(q)
         return res["Action"]
@@ -41,6 +45,9 @@ class NEEMInterface:
         return self.prolog.once(f"mem_episode_stop({atom(neem_path)}, {end_time if end_time is not None else time.time()})")
 
     def add_subaction_with_task(self, parent_action, sub_action_type, task_type) -> str:
+        """
+        Assert a subaction of a given type, and an associated task of a given type.
+        """
         q = f"add_subaction_with_task({atom(parent_action)},{atom(sub_action_type)},{atom(task_type)},SubAction)"
         solution = self.prolog.once(q)
         if solution is not None:
@@ -51,6 +58,9 @@ class NEEMInterface:
     ### NEEM Parsing ###############################################################
 
     def load_neem(self, neem_path: str):
+        """
+        Load a NEEM into the KnowRob knowledge base.
+        """
         self.prolog.once(f"remember({atom(neem_path)})")
 
     def get_all_actions(self) -> List[str]:
@@ -68,15 +78,19 @@ class NEEMInterface:
         return res["Begin"], res["End"]
 
     def get_tf_trajectory(self, obj: str, start_timestamp: float, end_timestamp: float) -> List:
-        res = self.prolog.once(f"tf_mng_trajectory({obj}, {start_timestamp}, {end_timestamp}, Trajectory)")
+        res = self.prolog.once(f"tf_mng_trajectory({atom(obj)}, {start_timestamp}, {end_timestamp}, Trajectory)")
         return res["Trajectory"]
 
     def get_wrench_trajectory(self, obj: str, start_timestamp: float, end_timestamp: float) -> List:
-        res = self.prolog.once(f"wrench_mng_trajectory({obj}, {start_timestamp}, {end_timestamp}, Trajectory)")
+        res = self.prolog.once(f"wrench_mng_trajectory({atom(obj)}, {start_timestamp}, {end_timestamp}, Trajectory)")
         return res["Trajectory"]
 
 
 class Episode:
+    """
+    Convenience object and context manager for NEEM creation. Can be used in a 'with' statement to automatically
+    start and end a NEEM context (episode).
+    """
     def __init__(self, neem_interface: NEEMInterface, task_type: str, env_owl: str, env_owl_ind_name: str,
                  env_urdf: str,
                  env_urdf_prefix: str, agent_owl: str, agent_owl_ind_name: str, agent_urdf: str, neem_output_path: str,
