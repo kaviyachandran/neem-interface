@@ -72,6 +72,16 @@ class NEEM:
         subaction_participants = [solution["Participant"] for solution in subaction_solutions]
         return list(set(participants + subaction_participants))
 
+    def get_trajectory(self, object_iri: str) -> List[dict]:
+        """
+        Get the trajectory of an object over the course of this NEEM.
+        """
+        top_level_action = self.get_top_level_action()
+        res = self.prolog.once(f"kb_call(has_time_interval({atom(top_level_action)}, StartTime, EndTime))")
+        start_time = res["StartTime"]
+        end_time = res["EndTime"]
+        return self.neem_interface.get_tf_trajectory(object_iri, start_time, end_time)
+
     @staticmethod
     def load(neem_dir: str):
         NEEMInterface().load_neem(neem_dir)
