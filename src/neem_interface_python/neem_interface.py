@@ -2,7 +2,10 @@ import os
 from typing import List, Tuple, Optional
 import time
 
+import numpy as np
+
 from neem_interface_python.rosprolog_client import Prolog, atom
+from neem_interface_python.utils import Datapoint
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -54,6 +57,15 @@ class NEEMInterface:
             return solution["SubAction"]
         else:
             raise NEEMError("Failed to create action")
+
+    def assert_tf_trajectory(self, points: List[Datapoint]):
+        print(f"Inserting {len(points)} points")
+        for point in points:
+            ee_pose_str = point.to_knowrob_string()
+            self.prolog.once(f"""
+                time_scope({point.timestamp}, {point.timestamp}, QS),
+                tf_set_pose({point.frame}, {ee_pose_str}, QS).
+            """)
 
     ### NEEM Parsing ###############################################################
 
