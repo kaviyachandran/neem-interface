@@ -26,7 +26,6 @@ class NEEMInterface:
         neem_interface_path = os.path.join(SCRIPT_DIR, os.pardir, "neem-interface.pl")
         self.prolog.once(f"ensure_loaded({atom(neem_interface_path)})")
 
-        self.current_episode = None
 
     ### NEEM Creation ###############################################################
 
@@ -66,6 +65,33 @@ class NEEMInterface:
                 time_scope({point.timestamp}, {point.timestamp}, QS),
                 tf_set_pose({point.frame}, {ee_pose_str}, QS).
             """)
+
+    def assert_transition(self, agent: str, object: str, start_time: float, end_time: float) -> Tuple[str, str, str]:
+        res = self.prolog.once(f"""
+            kb_project([
+                new_iri(InitialScene, soma:'Scene'), is_individual(InitialScene), instance_of(InitialScene, soma:'Scene'),
+                new_iri(InitialState, soma:'State'), is_state(InitialState),
+                has_participant(InitialState, {atom(object)}),
+                has_participant(InitialState, {atom(agent)}),
+                holds(InitialScene, dul:'includesEvent', InitialState),
+                has_time_interval(InitialState, {start_time}, {start_time}),
+
+                new_iri(TerminalScene, soma:'Scene'), is_individual(TerminalScene), instance_of(TerminalScene, soma:'Scene'),
+                new_iri(TerminalState, soma:'State'), is_state(TerminalState),
+                has_participant(TerminalState, {atom(object)}),
+                has_participant(TerminalState, {atom(agent)}),
+                holds(TerminalScene, dul:'includesEvent', TerminalState),
+                has_time_interval(TerminalState, {end_time}, {end_time}),
+
+                new_iri(Transition, dul:'Transition'), is_individual(Transition), instance_of(Transition, soma:'StateTransition'),
+                holds(Transition, soma:'hasInitialScene', InitialScene),
+                holds(Transition, soma:'hasTerminalScene', TerminalScene)
+            ]).
+        """)
+        transition_iri = res["Transition"]
+        initial_state_iri = res["InitialState"]
+        terminal_state_iri = res["TerminalState"]
+        return transition_iri, initial_state_iri, terminal_state_iri
 
     ### NEEM Parsing ###############################################################
 
