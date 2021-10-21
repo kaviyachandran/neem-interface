@@ -46,14 +46,18 @@ class NEEMInterface:
         """
         return self.prolog.once(f"mem_episode_stop({atom(neem_path)}, {end_time if end_time is not None else time.time()})")
 
-    def add_subaction_with_task(self, parent_action, sub_action_type, task_type) -> str:
+    def add_subaction_with_task(self, parent_action, sub_action_type="dul:'Action'", task_type="dul:'Task'",
+                                start_time: float = None, end_time: float = None) -> str:
         """
         Assert a subaction of a given type, and an associated task of a given type.
         """
-        q = f"add_subaction_with_task({atom(parent_action)},{atom(sub_action_type)},{atom(task_type)},SubAction)"
+        q = f"mem_add_subaction_with_task({atom(parent_action)},{atom(sub_action_type)},{atom(task_type)},SubAction)"
         solution = self.prolog.once(q)
         if solution is not None:
-            return solution["SubAction"]
+            action_iri = solution["SubAction"]
+            if start_time is not None and end_time is not None:
+                self.prolog.once(f"kb_project(has_time_interval({atom(action_iri)}, {start_time}, {end_time}))")
+            return action_iri
         else:
             raise NEEMError("Failed to create action")
 
@@ -63,23 +67,23 @@ class NEEMInterface:
             ee_pose_str = point.to_knowrob_string()
             self.prolog.once(f"""
                 time_scope({point.timestamp}, {point.timestamp}, QS),
-                tf_set_pose({point.frame}, {ee_pose_str}, QS).
+                tf_set_pose({atom(point.frame)}, {ee_pose_str}, QS).
             """)
 
-    def assert_transition(self, agent: str, object: str, start_time: float, end_time: float) -> Tuple[str, str, str]:
+    def assert_transition(self, agent_iri: str, object_iri: str, start_time: float, end_time: float) -> Tuple[str, str, str]:
         res = self.prolog.once(f"""
             kb_project([
                 new_iri(InitialScene, soma:'Scene'), is_individual(InitialScene), instance_of(InitialScene, soma:'Scene'),
                 new_iri(InitialState, soma:'State'), is_state(InitialState),
-                has_participant(InitialState, {atom(object)}),
-                has_participant(InitialState, {atom(agent)}),
+                has_participant(InitialState, {atom(object_iri)}),
+                has_participant(InitialState, {atom(agent_iri)}),
                 holds(InitialScene, dul:'includesEvent', InitialState),
                 has_time_interval(InitialState, {start_time}, {start_time}),
 
                 new_iri(TerminalScene, soma:'Scene'), is_individual(TerminalScene), instance_of(TerminalScene, soma:'Scene'),
                 new_iri(TerminalState, soma:'State'), is_state(TerminalState),
-                has_participant(TerminalState, {atom(object)}),
-                has_participant(TerminalState, {atom(agent)}),
+                has_participant(TerminalState, {atom(object_iri)}),
+                has_participant(TerminalState, {atom(agent_iri)}),
                 holds(TerminalScene, dul:'includesEvent', TerminalState),
                 has_time_interval(TerminalState, {end_time}, {end_time}),
 
@@ -92,6 +96,38 @@ class NEEMInterface:
         initial_state_iri = res["InitialState"]
         terminal_state_iri = res["TerminalState"]
         return transition_iri, initial_state_iri, terminal_state_iri
+
+    def assert_agent_with_effector(self, effector_iri: str, agent_type="dul:'PhysicalAgent'", agent_iri: str = None) -> str:
+        if agent_iri is None:
+            agent_iri = self.prolog.once(f"""
+                kb_project([
+                    new_iri(Agent, dul:'Agent'), is_individual(Agent), instance_of(Agent, {atom(agent_type)})
+                ]).""")["Agent"]
+        self.prolog.once(f"has_end_link({atom(agent_iri)}, {atom(effector_iri)})")
+        return agent_iri
+
+    def assert_state(self, participant_iris: List[str], start_time: float = None, end_time: float = None, state_type="soma:'State'") -> str:
+        state_iri = self.prolog.once(f"""
+            kb_project([
+                new_iri(State, {atom(state_type)}), is_individual(State), instance_of(State, {atom(state_type)})
+            ])
+        """)["State"]
+        if start_time is not None and end_time is not None:
+            self.prolog.once(f"kb_project(has_time_interval({atom(state_iri)}, {start_time}, {end_time}))")
+        for iri in participant_iris:
+            self.prolog.once(f"kb_project(has_participant({atom(state_iri)}, {atom(iri)}))")
+        return state_iri
+
+    def assert_situation(self, agent_iri: str, involved_objects: List[str], situation_type="dul:'Situation'") -> str:
+        situation_iri = self.prolog.once(f"""
+            kb_project([
+                new_iri(Situation, {atom(situation_type)}), is_individual(Situation), instance_of(Situation, {atom(situation_type)}),
+                holds(Situation, dul:'includesAgent', {atom(agent_iri)})
+            ])
+        """)["Situation"]
+        for obj_iri in involved_objects:
+            self.prolog.once(f"kb_project(holds({atom(situation_iri)}, dul:'includesObject', {atom(obj_iri)}))")
+        return situation_iri
 
     ### NEEM Parsing ###############################################################
 
@@ -150,8 +186,7 @@ class Episode:
 
     def __enter__(self):
         self.top_level_action_iri = self.neem_interface.start_episode(self.task_type, self.env_owl,
-                                                                      self.env_owl_ind_name, self.env_urdf,
-                                                                      self.env_urdf_prefix, self.agent_owl,
+                                                                      self.env_owl_ind_name, self.env_urdf, self.agent_owl,
                                                                       self.agent_owl_ind_name, self.agent_urdf,
                                                                       self.start_time)
         self.episode_iri = \

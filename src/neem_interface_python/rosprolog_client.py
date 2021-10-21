@@ -150,7 +150,11 @@ class Prolog(object):
 
 
 def atom(string: str):
-    if re.match(".+:'.+'", string):
-        # Has namespace prefix --> don't wrap in quotes
-        return string
-    return f"'{string}'"
+    try:
+        if re.match(".+:'.+'", string):
+            # Has namespace prefix --> don't wrap in quotes
+            return string
+        return f"'{string}'"
+    except:
+        print(string)
+        raise RuntimeError()

@@ -28,7 +28,7 @@ mem_episode_start(Action, TaskType, EnvOwl, EnvOwlIndiName, EnvUrdf, AgentOwl, A
         new_iri(Episode, soma:'Episode'), is_episode(Episode), % Using new_iri here and below is a hideous workaround for a KnowRob bug, see https://github.com/knowrob/knowrob/issues/299
         new_iri(Action, dul:'Action'), is_action(Action),
         new_iri(TimeInterval, dul:'TimeInterval'), holds(Action, dul:'hasTimeInterval', TimeInterval), holds(TimeInterval, soma:'hasIntervalBegin', StartTime),
-        new_iri(Task, dul:'Task'), has_type(Task,TaskType), executes_task(Action,Task),
+        new_iri(Task, dul:'Task'), instance_of(Task,TaskType), executes_task(Action,Task),
         is_setting_for(Episode,Action),
         is_performed_by(Action,Agent),
         new_iri(Role, soma:'AgentRole'), has_type(Role, soma:'AgentRole'), has_role(Agent,Role)
@@ -59,7 +59,7 @@ mem_event_set_succeeded(Action) :- kb_project(action_succeeded(Action)).
 
 mem_event_add_diagnosis(Situation, Diagnosis) :- kb_project(satisfies(Situation, Diagnosis)).
 
-add_subaction_with_task(ParentAction,SubActionType,TaskType,SubAction) :-
+mem_add_subaction_with_task(ParentAction,SubActionType,TaskType,SubAction) :-
     execution_agent(Agent),
     kb_project([
         new_iri(SubAction, SubActionType), has_type(SubAction,SubActionType),

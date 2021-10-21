@@ -13,9 +13,9 @@ class Datapoint:
         """
         :param timestamp:
         :param reference_frame: e.g. 'world'
-        :param pos: [x,y,z]
-        :param ori: [qx,qy,qz,qw]
-        :param wrench: [fx,fy,fz,mx,my,mz]
+        :param pos: [x,y,z] in m
+        :param ori: [qx,qy,qz,qw] in a right-handed coordinate system
+        :param wrench: [fx,fy,fz,mx,my,mz] in N / Nm
         """
         self.timestamp = timestamp
         self.frame = frame
@@ -35,8 +35,9 @@ class Datapoint:
         """
         Convert to a KnowRob pose "[reference_cs, [x,y,z],[qx,qy,qz,qw]]"
         """
-        return f"[{atom(self.reference_frame)}, [{self.pos[0]},{self.pos[1]},{self.pos[2]}], [{self.pos[3]}," \
-               f"{self.pos[4]},{self.pos[5]},{self.pos[6]}]]"
+        quat = self.ori.as_quat()   # qxyzw
+        return f"[{atom(self.reference_frame)}, [{self.pos[0]},{self.pos[1]},{self.pos[2]}], [{quat[0]}," \
+               f"{quat[1]},{quat[2]},{quat[3]}]]"
 
     @staticmethod
     def from_tf(tf_msg: dict):
@@ -49,3 +50,21 @@ class Datapoint:
         ori = Rotation.from_quat([rot["x"], rot["y"], rot["z"], rot["w"]])
         return Datapoint(timestamp, frame, reference_frame, pos, ori)
 
+    @staticmethod
+    def from_unreal(timestamp: float, frame: str, reference_frame: str, pos_cm: List[float], ori_lhs: Rotation):
+        """
+        See https://github.com/robcog-iai/UUtils/blob/master/Source/UConversions/Public/Conversions.h#L59-L74
+        :param timestamp: In seconds
+        :param frame:
+        :param reference_frame:
+        :param pos: [x,y,z] in cm
+        :param ori: [qx,qy,qz,qw] in a left-handed coordinate system
+        :return:
+        """
+        # Convert cm to mm
+        pos_m = [p / 100.0 for p in pos_cm]
+
+        # Convert handedness of coordinate systems
+        x, y, z, w = ori_lhs.as_quat()
+        ori_rhs = Rotation.from_quat([-x, y, -z, w])
+        return Datapoint(timestamp, frame, reference_frame, pos_m, ori_rhs)
