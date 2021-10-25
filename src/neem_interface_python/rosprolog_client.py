@@ -126,6 +126,9 @@ class Prolog(object):
     def once(self, query_str: str) -> Optional[Dict]:
         """
         Call rosprolog once and immediately finish the query.
+        Return None if Prolog returned false.
+        Return a Dict mapping all variables in the query to atoms if the query succeeded.
+        Throw an exception if query execution failed (syntax errors, connection errors etc.)
         """
         q = None
         try:
@@ -138,15 +141,36 @@ class Prolog(object):
             if q is not None:
                 q.finish()
 
+    def ensure_once(self, query_str) -> Dict:
+        """
+        Same as once, but throws an exception if Prolog returns false.
+        """
+        res = self.once(query_str)
+        if res is None:
+            raise PrologException(f"Prolog returned false.\nQuery: {query_str}")
+        return res
+
     def all_solutions(self, query_str: str) -> List[Dict]:
         """
         Requests all solutions from rosprolog, this might take a long time
+        Return an empty List if Prolog returned False.
+        Return a List of Dicts mapping all variables in the query to atoms if the query succeeded.
+        Throw an exception if query execution failed (syntax errors, connection errors etc.)
         """
         return list(PrologQuery(query_str,
                                 iterative=False,
                                 simple_query_srv=self._simple_query_srv,
                                 next_solution_srv=self._next_solution_srv,
                                 finish_srv=self._finish_query_srv).solutions())
+
+    def ensure_all_solutions(self, query_str) -> List[Dict]:
+        """
+        Same as all_solutions, but raise an exception if Prolog returns false.
+        """
+        res = self.all_solutions(query_str)
+        if len(res) == 0:
+            raise PrologException(f"Prolog returned false.\nQuery: {query_str}")
+        return res
 
 
 def atom(string: str):
