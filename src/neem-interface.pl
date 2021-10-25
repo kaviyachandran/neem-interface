@@ -62,14 +62,14 @@ mem_event_add_diagnosis(Situation, Diagnosis) :- kb_project(satisfies(Situation,
 mem_add_subaction_with_task(ParentAction,SubActionType,TaskType,SubAction) :-
     execution_agent(Agent),
     kb_project([
-        new_iri(SubAction, SubActionType), has_type(SubAction,SubActionType),
-        new_iri(Task, TaskType), has_type(Task,TaskType), executes_task(SubAction,Task),
+        new_iri(SubAction, SubActionType), is_individual(SubAction), instance_of(SubAction,SubActionType),
+        new_iri(Task, TaskType), is_individual(Task), instance_of(Task,TaskType), executes_task(SubAction,Task),
         % % has_subevent(ParentAction,SubAction), <-- has_subevent is currently broken in KnowRob (https://github.com/knowrob/knowrob/issues/300)
         holds(ParentAction,dul:hasConstituent,SubAction), % replacement for has_subevent
         is_performed_by(SubAction,Agent)
     ]),!.
 
-mem_event_end(Event) :- execution_agent(Agent),get_time(CurrentTime), kb_call([triple(Event,dul:'hasTimeInterval',TimeInterval), triple(TimeInterval,soma:'hasIntervalBegin', Start), executes_task(Event,Task)]),kb_unproject(TimeInterval, soma:'hasIntervalEnd', _),kb_project([holds(TimeInterval, soma:'hasIntervalEnd', CurrentTime),has_type(Role, soma:'AgentRole'), has_role(Agent,Role) during Event,task_role(Task, Role)]),!.
+mem_event_end(Event) :- execution_agent(Agent), get_time(CurrentTime), kb_call([triple(Event,dul:'hasTimeInterval',TimeInterval), triple(TimeInterval,soma:'hasIntervalBegin', Start), executes_task(Event,Task)]),kb_unproject(TimeInterval, soma:'hasIntervalEnd', _),kb_project([holds(TimeInterval, soma:'hasIntervalEnd', CurrentTime),has_type(Role, soma:'AgentRole'), has_role(Agent,Role) during Event,task_role(Task, Role)]),!.
 
 mem_event_begin(Event) :- get_time(CurrentTime),kb_project(occurs(Event) since CurrentTime),!.
 
