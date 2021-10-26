@@ -12,14 +12,14 @@ class NEEM:
     def __init__(self):
         self.neem_interface = NEEMInterface()
         self.prolog = Prolog()
-        self.episode = self.prolog.once("kb_call(is_episode(Episode))")["Episode"]
+        self.episode = self.prolog.ensure_once("kb_call(is_episode(Episode))")["Episode"]
 
     def get_transitions(self) -> List[str]:
         """
         Get a list of transition IRIs associated to this NEEM, sorted by time
         """
         top_level_action = self.get_top_level_action()
-        res = self.prolog.once(f"""
+        res = self.prolog.ensure_once(f"""
             kb_call([
                 holds({atom(top_level_action)}, dul:'hasTimeInterval', TimeInterval),
                 holds(TimeInterval, soma:'hasIntervalBegin', StartTime),
@@ -28,11 +28,11 @@ class NEEM:
         """)
         start_time = res["StartTime"]
         end_time = res["EndTime"]
-        res = self.prolog.all_solutions(f"kb_call(is_transition(Transition)).")
+        res = self.prolog.ensure_all_solutions(f"kb_call(is_transition(Transition)).")
         all_transitions = [sol["Transition"] for sol in res]
         transitions_by_time = dict()
         for transition in all_transitions:
-            res = self.prolog.once(f"""
+            res = self.prolog.ensure_once(f"""
                 kb_call([
                     holds({atom(transition)}, soma:'hasInitialScene', InitialScene),
                     is_state(InitialState), holds(InitialScene, dul:'includesEvent', InitialState),
@@ -47,7 +47,7 @@ class NEEM:
         return [kv[1] for kv in sorted(transitions_by_time.items())]
 
     def get_top_level_action(self) -> str:
-        solutions = self.prolog.all_solutions(f"""
+        solutions = self.prolog.ensure_all_solutions(f"""
             kb_call([
                 is_action(Action), is_setting_for({atom(self.episode)}, Action)
             ]).
@@ -59,11 +59,11 @@ class NEEM:
         Get a list of all things participating in any subaction of the episode.
         """
         top_level_action = self.get_top_level_action()
-        solutions = self.prolog.all_solutions(f"""
+        solutions = self.prolog.ensure_all_solutions(f"""
             kb_call(has_participant({atom(top_level_action)}, Participant))
         """)
         participants = [solution["Participant"] for solution in solutions]
-        subaction_solutions = self.prolog.all_solutions(f"""
+        subaction_solutions = self.prolog.ensure_all_solutions(f"""
             kb_call([
                 is_action(Action), holds({atom(top_level_action)},dul:hasConstituent,Action),
                 has_participant(Action, Participant)
@@ -77,7 +77,7 @@ class NEEM:
         Get the trajectory of an object over the course of this NEEM.
         """
         top_level_action = self.get_top_level_action()
-        res = self.prolog.once(f"kb_call(has_time_interval({atom(top_level_action)}, StartTime, EndTime))")
+        res = self.prolog.ensure_once(f"kb_call(has_time_interval({atom(top_level_action)}, StartTime, EndTime))")
         start_time = res["StartTime"]
         end_time = res["EndTime"]
         return self.neem_interface.get_tf_trajectory(object_iri, start_time, end_time)
