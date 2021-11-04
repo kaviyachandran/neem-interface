@@ -79,9 +79,17 @@ belief_perceived_at(ObjectType, Mesh, Rotation, Object) :- kb_project([has_type(
 
 belief_perceived_at(ObjectType, Object) :- kb_project([has_type(Object,ObjectType)]).
 
-mem_tf_is_at(Object, ReferenceFrame, Position, Rotation, Timestamp) :-
+mem_tf_set(Object, ReferenceFrame, Position, Rotation, Timestamp) :-
     time_scope(=(Timestamp), =<('Infinity'), FScope),
     tf_set_pose(Object, [ReferenceFrame, Position, Rotation], FScope).
+
+mem_tf_get(Object, ReferenceFrame, Position, Rotation) :-
+    current_scope(QScope),
+    tf_get_pose(Object, [ReferenceFrame, Position, Rotation], QScope, _).
+
+mem_tf_get(Object, ReferenceFrame, Position, Rotation, Timestamp) :-
+    time_scope(=(Timestamp), =(Timestamp), QScope),
+    tf_get_pose(Object, [ReferenceFrame, Position, Rotation], QScope, _).
 
 add_participant_with_role(Action, ObjectId, RoleType) :-
 kb_call([executes_task(Action, Task),triple(Event,dul:'hasTimeInterval',TimeInterval),triple(TimeInterval,soma:'hasIntervalBegin',Start),triple(TimeInterval,soma:'hasIntervalEnd',End)]),
