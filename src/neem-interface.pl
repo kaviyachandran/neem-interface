@@ -8,6 +8,11 @@ mem_clear_memory() :-
     mng_drop(roslog, tf).
 
 mem_episode_start(Action, TaskType, EnvOwl, EnvOwlIndiName, EnvUrdf, EnvUrdfPrefix, AgentOwl, AgentOwlIndiName, AgentUrdf) :-
+    get_time(StartTime),
+    mem_episode_start(Action, TaskType, EnvOwl, EnvOwlIndiName, EnvUrdf, EnvUrdfPrefix, AgentOwl, AgentOwlIndiName, AgentUrdf, StartTime).
+
+mem_episode_start(Action, TaskType, EnvOwl, EnvOwlIndiName, EnvUrdf, EnvUrdfPrefix, AgentOwl, AgentOwlIndiName, AgentUrdf,
+                  StartTime) :-
     retractall(execution_agent(_)),
     tf_logger_disable,
     mem_clear_memory,
@@ -22,6 +27,7 @@ mem_episode_start(Action, TaskType, EnvOwl, EnvOwlIndiName, EnvUrdf, EnvUrdfPref
     kb_project([
         new_iri(Episode, soma:'Episode'), is_episode(Episode), % Using new_iri here and below is a hideous workaround for a KnowRob bug, see https://github.com/knowrob/knowrob/issues/299
         new_iri(Action, dul:'Action'), is_action(Action),
+        new_iri(TimeInterval, dul:'TimeInterval'), holds(Action, dul:'hasTimeInterval', TimeInterval), holds(TimeInterval, soma:'hasIntervalBegin', StartTime),
         new_iri(Task, dul:'Task'), has_type(Task,TaskType), executes_task(Action,Task),
         is_setting_for(Episode,Action),
         is_performed_by(Action,Agent),
@@ -32,7 +38,20 @@ mem_episode_start(Action, TaskType, EnvOwl, EnvOwlIndiName, EnvUrdf, EnvUrdfPref
 
 %is_recording_episode(Result) :- assertz(cramEpisodeName('None')), retract(cramEpisodeName('None')), (cramEpisodeName(Name) -> Result = Name ; Result = 'NoName').
 %delete_episode_name(Name) :- retract(cramEpisodeName(Name)).
-mem_episode_stop(NeemPath) :- get_time(CurrentTime), atom_concat(NeemPath,'/',X1), atom_concat(X1,CurrentTime,X2), memorize(X2), mem_clear_memory.
+
+mem_episode_stop(NeemPath) :-
+    get_time(EndTime),
+    mem_episode_stop(NeemPath, EndTime).
+
+mem_episode_stop(NeemPath, EndTime) :-
+    kb_call([
+        is_episode(Episode), is_action(Action), is_setting_for(Episode,Action),
+        holds(Action, dul:'hasTimeInterval', TimeInterval)
+    ]),
+    kb_project([
+        holds(TimeInterval, soma:'hasIntervalEnd', EndTime)
+    ]),
+    get_time(CurrentTime), atom_concat(NeemPath,'/',X1), atom_concat(X1,CurrentTime,X2), memorize(X2), mem_clear_memory.
 
 mem_event_set_failed(Action) :- kb_project(action_failed(Action)).
 
