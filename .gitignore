@@ -138,5 +138,5 @@ dmypy.json
 cython_debug/
 
 
-.idea
-.vscode
+.idea/
+.vscode/
