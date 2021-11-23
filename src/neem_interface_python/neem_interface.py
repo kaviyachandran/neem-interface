@@ -54,13 +54,18 @@ class NEEMInterface:
         """
         q = f"mem_add_subaction_with_task({atom(parent_action)},{atom(sub_action_type)},{atom(task_type)},SubAction)"
         solution = self.prolog.ensure_once(q)
-        if solution is not None:
-            action_iri = solution["SubAction"]
-            if start_time is not None and end_time is not None:
-                self.prolog.ensure_once(f"kb_project(has_time_interval({atom(action_iri)}, {start_time}, {end_time}))")
-            return action_iri
-        else:
-            raise NEEMError("Failed to create action")
+        action_iri = solution["SubAction"]
+        if start_time is not None and end_time is not None:
+            self.prolog.ensure_once(f"kb_project(has_time_interval({atom(action_iri)}, {start_time}, {end_time}))")
+        return action_iri
+
+    def add_participant_with_role(self, action: str, participant: str, role_type="dul:'Role'") -> None:
+        """
+        Assert that something was a participant with a given role in an action.
+        Participant must already have been inserted into the knowledge base.
+        """
+        q = f"mem_add_participant_with_role({atom(action)}, {atom(participant)}, {atom(role_type)})"
+        self.prolog.ensure_once(q)
 
     def assert_tf_trajectory(self, points: List[Datapoint]):
         print(f"Inserting {len(points)} points")
