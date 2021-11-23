@@ -51,20 +51,21 @@ class Datapoint:
         return Datapoint(timestamp, frame, reference_frame, pos, ori)
 
     @staticmethod
-    def from_unreal(timestamp: float, frame: str, reference_frame: str, pos_cm: List[float], ori_lhs: Rotation):
+    def from_unreal(timestamp: float, frame: str, reference_frame: str, pos_cm: List[float], ori_lhs: List[float]):
         """
         See https://github.com/robcog-iai/UUtils/blob/master/Source/UConversions/Public/Conversions.h#L59-L74
         :param timestamp: In seconds
         :param frame:
         :param reference_frame:
-        :param pos: [x,y,z] in cm
-        :param ori: [qx,qy,qz,qw] in a left-handed coordinate system
+        :param pos_cm: [x,y,z] in cm
+        :param ori_lhs: [qx,qy,qz,qw] in a left-handed coordinate system
         :return:
         """
         # Convert cm to mm
         pos_m = [p / 100.0 for p in pos_cm]
+        pos_rhs = [pos_m[1], pos_m[0], pos_m[2]]
 
         # Convert handedness of coordinate systems
-        x, y, z, w = ori_lhs.as_quat()
+        x, y, z, w = ori_lhs
         ori_rhs = Rotation.from_quat([-x, y, -z, w])
-        return Datapoint(timestamp, frame, reference_frame, pos_m, ori_rhs)
+        return Datapoint(timestamp, frame, reference_frame, pos_rhs, ori_rhs)
