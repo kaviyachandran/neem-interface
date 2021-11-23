@@ -69,9 +69,9 @@ mem_add_subaction_with_task(ParentAction,SubActionType,TaskType,SubAction) :-
         is_performed_by(SubAction,Agent)
     ]),!.
 
-mem_event_end(Event) :- execution_agent(Agent), get_time(CurrentTime), kb_call([triple(Event,dul:'hasTimeInterval',TimeInterval), triple(TimeInterval,soma:'hasIntervalBegin', Start), executes_task(Event,Task)]),kb_unproject(TimeInterval, soma:'hasIntervalEnd', _),kb_project([holds(TimeInterval, soma:'hasIntervalEnd', CurrentTime),has_type(Role, soma:'AgentRole'), has_role(Agent,Role) during Event,task_role(Task, Role)]),!.
+% mem_event_end(Event) :- execution_agent(Agent), get_time(CurrentTime), kb_call([triple(Event,dul:'hasTimeInterval',TimeInterval), triple(TimeInterval,soma:'hasIntervalBegin', Start), executes_task(Event,Task)]),kb_unproject(TimeInterval, soma:'hasIntervalEnd', _),kb_project([holds(TimeInterval, soma:'hasIntervalEnd', CurrentTime),has_type(Role, soma:'AgentRole'), has_role(Agent,Role) during Event,task_role(Task, Role)]),!.
 
-mem_event_begin(Event) :- get_time(CurrentTime),kb_project(occurs(Event) since CurrentTime),!.
+% mem_event_begin(Event) :- get_time(CurrentTime),kb_project(occurs(Event) since CurrentTime),!.
 
 %belief_perceived_at(ObjectType, Frame, Object) :- get_time(CurrentTime),execution_agent(Agent),kb_project([has_type(Object,ObjectType),is_at(Object,Frame) since CurrentTime]).
 
@@ -99,11 +99,14 @@ mem_wrench_set(Object, Force, Torque, Timestamp) :-
     wrench_set(Object, [Force, Torque], FScope),
     write('wrench_set succeeded\n').
 
-add_participant_with_role(Action, ObjectId, RoleType) :-
-kb_call([executes_task(Action, Task),triple(Event,dul:'hasTimeInterval',TimeInterval),triple(TimeInterval,soma:'hasIntervalBegin',Start),triple(TimeInterval,soma:'hasIntervalEnd',End)]),
-kb_project([has_participant(Action,ObjectId), has_type(Role, RoleType), has_role(ObjectId,Role) during Action,task_role(Task, Role)]).
-
-%add_participant_with_role(Action, ObjectId, RoleType) :- kb_call(executes_task(Action, Task)), kb_project([has_participant(Action,ObjectId), has_type(Role, RoleType), has_role(ObjectId,Role) during [0.0,0.0]]).
+mem_add_participant_with_role(Action, ObjectId, RoleType) :-
+    kb_call(executes_task(Action, Task)),
+    kb_project([
+        has_participant(Action,ObjectId),
+        new_iri(Role, dul:'Role'), is_individual(Role), instance_of(Role, RoleType),
+        has_task_role(Task, Role),
+        has_role(ObjectId, Role)
+    ]).
 
 add_parameter(Task, ParameterType, RegionType, Parameter) :-
     kb_project([
@@ -119,9 +122,9 @@ add_named_parameter(Task, ParameterType, ParameterName, RegionType, Parameter) :
     add_parameter(Task, ParameterType, RegionType, Parameter),
     kb_project(holds(Parameter, soma:hasNameString, ParameterName)).
 
-set_parameter_value_during_interval(Parameter, ParameterValue, Begin, End) :-
-    has_assignment(Parameter, Region),
-    kb_project(holds(Region, dul:hasRegionDataValue, ParameterValue) during [Begin, End]).
+% set_parameter_value_during_interval(Parameter, ParameterValue, Begin, End) :-
+%     has_assignment(Parameter, Region),
+%     kb_project(holds(Region, dul:hasRegionDataValue, ParameterValue) during [Begin, End]).
 
 set_parameter_value(Parameter, ParameterValue) :-
     has_assignment(Parameter, Region),
@@ -143,4 +146,4 @@ ros_logger_stop :-     ros_logger_pid(PID),
 
 
 
-test_tf_query :- kb_call([triple('http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Action_DCJBWPIE',dul:'hasTimeInterval',_O), triple(_O, soma:'hasIntervalBegin', _T2)]),time_scope(=<(_T2), >=(_T2), QScope),writeln(_T2),tf_get_pose('base_footprint', ['map',Position,Orientation], QScope, _),!.
+% test_tf_query :- kb_call([triple('http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Action_DCJBWPIE',dul:'hasTimeInterval',_O), triple(_O, soma:'hasIntervalBegin', _T2)]),time_scope(=<(_T2), >=(_T2), QScope),writeln(_T2),tf_get_pose('base_footprint', ['map',Position,Orientation], QScope, _),!.
