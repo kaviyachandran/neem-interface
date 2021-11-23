@@ -79,17 +79,17 @@ belief_perceived_at(ObjectType, Mesh, Rotation, Object) :- kb_project([has_type(
 
 belief_perceived_at(ObjectType, Object) :- kb_project([has_type(Object,ObjectType)]).
 
-mem_tf_set(Object, ReferenceFrame, Position, Rotation, Timestamp) :-
+mem_tf_set(Object, Pose, Timestamp) :-
     time_scope(=(Timestamp), =<('Infinity'), FScope),
-    tf_set_pose(Object, [ReferenceFrame, Position, Rotation], FScope).
+    tf_set_pose(Object, Pose, FScope).
 
-mem_tf_get(Object, ReferenceFrame, Position, Rotation) :-
+mem_tf_get(Object, Pose) :-
     current_scope(QScope),
-    tf_get_pose(Object, [ReferenceFrame, Position, Rotation], QScope, _).
+    tf_get_pose(Object, Pose, QScope, _).
 
-mem_tf_get(Object, ReferenceFrame, Position, Rotation, Timestamp) :-
+mem_tf_get(Object, Timestamp) :-
     time_scope(=(Timestamp), =(Timestamp), QScope),
-    tf_get_pose(Object, [ReferenceFrame, Position, Rotation], QScope, _).
+    tf_get_pose(Object, Pose, QScope, _).
 
 mem_wrench_set(Object, Force, Torque, Timestamp) :-
     write('mem_wrench_set, object: '),
