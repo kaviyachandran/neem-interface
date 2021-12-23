@@ -3,10 +3,9 @@ from typing import List, Tuple, Optional
 import time
 
 from tqdm import tqdm
-import numpy as np
 
 from neem_interface_python.rosprolog_client import Prolog, atom
-from neem_interface_python.utils import Datapoint
+from neem_interface_python.utils.utils import Datapoint
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -137,6 +136,7 @@ class NEEMInterface:
         for obj_iri in involved_objects:
             self.prolog.ensure_once(f"kb_project(holds({atom(situation_iri)}, dul:'includesObject', {atom(obj_iri)}))")
         return situation_iri
+
 
     ### NEEM Parsing ###############################################################
 

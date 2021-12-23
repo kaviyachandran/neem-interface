@@ -12,6 +12,8 @@ import re
 
 import roslibpy
 
+from neem_interface_python.utils.rosbridge import ros_client
+
 
 class PrologException(Exception):
     pass
@@ -108,11 +110,9 @@ class Prolog(object):
         :type timeout: int
         """
         ros_hostname = urlparse(os.environ["ROS_MASTER_URI"]).hostname
-        self.ros_client = roslibpy.Ros(ros_hostname, 9090)
-        self.ros_client.run(timeout=30)
-        self._simple_query_srv = roslibpy.Service(self.ros_client, f'{name_space}/query', "json_prolog_msgs/srv/PrologQuery")
-        self._next_solution_srv = roslibpy.Service(self.ros_client, f'{name_space}/next_solution', "json_prolog_msgs/srv/PrologNextSolution")
-        self._finish_query_srv = roslibpy.Service(self.ros_client, f'{name_space}/finish', "json_prolog_msgs/srv/PrologFinish")
+        self._simple_query_srv = roslibpy.Service(ros_client, f'{name_space}/query', "json_prolog_msgs/srv/PrologQuery")
+        self._next_solution_srv = roslibpy.Service(ros_client, f'{name_space}/next_solution', "json_prolog_msgs/srv/PrologNextSolution")
+        self._finish_query_srv = roslibpy.Service(ros_client, f'{name_space}/finish', "json_prolog_msgs/srv/PrologFinish")
 
     def query(self, query_str):
         """
