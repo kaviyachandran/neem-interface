@@ -87,7 +87,7 @@ mem_tf_get(Object, Pose) :-
     current_scope(QScope),
     tf_get_pose(Object, Pose, QScope, _).
 
-mem_tf_get(Object, Timestamp) :-
+mem_tf_get(Object, Pose, Timestamp) :-
     time_scope(=(Timestamp), =(Timestamp), QScope),
     tf_get_pose(Object, Pose, QScope, _).
 
