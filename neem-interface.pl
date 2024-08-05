@@ -18,8 +18,8 @@ mem_episode_start(Action, EnvOwl, EnvOwlIndiName, EnvUrdf, EnvUrdfPrefix, AgentO
     tf_logger_enable,
     load_owl(EnvOwl),
     load_owl(AgentOwl),
-    urdf_load(AgentOwlIndiName, AgentUrdf, [load_rdf]),
-    urdf_load(EnvOwlIndiName, EnvUrdf, [load_rdf,prefix(EnvUrdfPrefix)]),
+    urdf_load_file(AgentOwlIndiName, AgentUrdf),
+    urdf_load_file(EnvOwlIndiName, EnvUrdf),
     assertz(execution_agent(AgentOwlIndiName)),
     execution_agent(Agent),
     kb_project([
