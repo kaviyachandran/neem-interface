@@ -11,10 +11,10 @@ mem_episode_start(Action, EnvOwl, EnvOwlIndiName, EnvUrdf, EnvUrdfPrefix, AgentO
     get_time(StartTime),
     mem_episode_start(Action,  EnvOwl, EnvOwlIndiName, EnvUrdf, EnvUrdfPrefix, AgentOwl, AgentOwlIndiName, AgentUrdf, StartTime).
 
-get_agent_individual(Agent) :-
+get_agent_individual(Agent = "http://knowrob.org/kb/knowrob.owl#PR2") :-
     kb_project([
-        new_iri(P, "http://knowrob.org/kb/knowrob.owl#PR2"), 
-        has_type(P, "http://knowrob.org/kb/knowrob.owl#PR2")
+        new_iri(P, Agent), 
+        has_type(P, Agent)
     ]).
 
 mem_episode_start(Action, EnvOwl, EnvOwlIndiName, EnvUrdf, EnvUrdfPrefix, AgentOwl, AgentOwlIndiName, AgentUrdf, StartTime) :-
